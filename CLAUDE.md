@@ -11,10 +11,8 @@
 ```
 blinkgit/
 ├── frontend/    # React + Vite SPA → deployed to Cloudflare Pages
-└── worker/      # Hono + AI SDK agent → deployed to Cloudflare Workers
+└── backend/     # Hono + Node.js + AI SDK agent → deployed to Railway
 ```
-
-Always be aware of which workspace you are in. Never mix Node.js-only APIs into `worker/` — it runs on the V8 edge runtime, not Node.js.
 
 ---
 
@@ -33,7 +31,7 @@ Always be aware of which workspace you are in. Never mix Node.js-only APIs into 
 - Use TanStack Query for all server/async state — never raw `fetch` in components
 - Tailwind utility classes only — no custom CSS files unless absolutely necessary
 - Use shadcn/ui primitives before writing custom UI components
-- Worker API base URL must come from `VITE_WORKER_URL` env variable
+- Backend API base URL must come from `VITE_BACKEND_URL` env variable
 
 ### Key Files
 | File | Role |
@@ -48,52 +46,49 @@ Always be aware of which workspace you are in. Never mix Node.js-only APIs into 
 
 ---
 
-## Worker (`worker/`)
+## Backend (`backend/`)
 
 ### Stack
-- Hono (edge-native router)
+- Hono + `@hono/node-server` (Node.js adapter)
 - Vercel AI SDK (`ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic`, `@ai-sdk/google`)
-- Octokit REST (`@octokit/core`) — fetch-based version only
+- Octokit REST (`@octokit/core`)
 - Zod (schema validation for AI outputs)
-- Cloudflare D1 (SQLite cache for repo analyses)
-- Cloudflare KV (model preference storage)
+- PostgreSQL (Railway-provided) — repo analysis cache and model config
+- `postgres` npm package for DB access
 
-### Critical Runtime Constraint
+### Runtime
 
-**The worker runs on Cloudflare Workers (V8 isolate), NOT Node.js.**
+**The backend runs on Node.js 20+ on Railway.**
 
-- No `fs`, `path`, `os`, `child_process`, or any Node built-ins
-- No LangChain, LlamaIndex, or any Node.js-dependent AI frameworks
-- No `require()` — ESM only
-- `fetch`, `Request`, `Response`, `URL`, `crypto` are all available globally
-- AI SDK, Hono, and `@octokit/core` are all edge-compatible and safe to use
+Full Node.js APIs are available (`fs`, `path`, etc.), but avoid using them unnecessarily — keep the code portable and dependency-light.
 
 ### Key Files & Responsibilities
 | File | Role |
 |---|---|
-| `src/index.ts` | Route registration |
+| `src/index.ts` | Hono app entry point, route registration |
 | `src/routes/` | All Hono route handlers |
 | `src/agent/github.ts` | All GitHub data fetching logic |
 | `src/agent/schema.ts` | Zod schema for AI output — never inline this elsewhere |
 | `src/agent/analyze.ts` | `streamObject` / `generateObject` call |
-| `src/db/cache.ts` | All D1 cache logic — never write raw SQL elsewhere |
+| `src/db/cache.ts` | All PostgreSQL cache logic — never write raw SQL elsewhere |
+| `src/db/models.ts` | Model config read/write (replaces Cloudflare KV) |
 
 ### API Routes
 | Method | Path | Description |
 |---|---|---|
 | POST | `/analyze` | Accepts `{ repoUrl }`, streams AI analysis (SSE) |
-| GET | `/models` | Returns currently selected model from KV |
-| POST | `/models` | Updates selected model in KV |
+| GET | `/models` | Returns currently selected model from DB |
+| POST | `/models` | Updates selected model in DB |
 
-### Environment Bindings (`wrangler.toml`)
-| Binding | Type | Purpose |
-|---|---|---|
-| `GITHUB_TOKEN` | Secret | GitHub personal access token |
-| `OPENAI_API_KEY` | Secret | OpenAI key |
-| `ANTHROPIC_API_KEY` | Secret | Anthropic key |
-| `GOOGLE_API_KEY` | Secret | Google key |
-| `ANALYSIS_CACHE` | D1 database | Repo analysis cache |
-| `MODEL_CONFIG` | KV namespace | Selected model storage |
+### Environment Variables (`.env` / Railway dashboard)
+| Variable | Purpose |
+|---|---|
+| `GITHUB_TOKEN` | GitHub personal access token |
+| `OPENAI_API_KEY` | OpenAI key |
+| `ANTHROPIC_API_KEY` | Anthropic key |
+| `GOOGLE_API_KEY` | Google key |
+| `DATABASE_URL` | PostgreSQL connection string (provided by Railway) |
+| `PORT` | Server port (Railway sets this automatically) |
 
 ---
 
@@ -125,7 +120,9 @@ z.object({
 ### Model Switching Pattern
 
 ```ts
-const modelId = await c.env.MODEL_CONFIG.get('selected_model') ?? 'openai/gpt-4o'
+import { getSelectedModel } from '../db/models.js'
+
+const modelId = await getSelectedModel() ?? 'openai/gpt-4o'
 
 const model =
   modelId.startsWith('anthropic') ? anthropic(modelId.split('/')[1]) :
@@ -165,13 +162,13 @@ npm run build      # production build
 npm run preview    # preview production build
 ```
 
-### Worker
+### Backend
 ```bash
-cd worker
+cd backend
 npm install
-npm run dev        # wrangler dev (local worker emulation)
-npm run deploy     # wrangler deploy (production)
-npm run cf-typegen # regenerate Cloudflare binding types
+npm run dev        # tsx watch src/index.ts (local dev)
+npm run build      # tsc (compile to dist/)
+npm run start      # node dist/index.js (production)
 ```
 
 ---
@@ -179,18 +176,17 @@ npm run cf-typegen # regenerate Cloudflare binding types
 ## Deployment
 
 - **Frontend** → Cloudflare Pages via `wrangler pages deploy dist/`
-- **Worker** → Cloudflare Workers via `wrangler deploy`
-- Secrets set via `wrangler secret put <SECRET_NAME>`
-- D1 and KV bindings must be created in the Cloudflare dashboard and referenced in `wrangler.toml`
+- **Backend** → Railway via git push (auto-detected Node.js, uses `npm run start`)
+- Secrets set via Railway dashboard environment variables
+- PostgreSQL provisioned as a Railway service; `DATABASE_URL` injected automatically
 
 ---
 
 ## Never Do
 
 - Never install or use LangChain, LlamaIndex, or any Python-based AI framework
-- Never use `next`, `express`, or any Node.js server framework in the worker
-- Never write raw SQL outside of `src/db/cache.ts`
-- Never put API keys or secrets in source code — always use Worker bindings
+- Never write raw SQL outside of `src/db/cache.ts` and `src/db/models.ts`
+- Never put API keys or secrets in source code — always use environment variables
 - Never fetch the entire repo file tree — always limit depth to avoid LLM context limits
-- Never call `streamObject` without first checking the D1 cache
-- Never hardcode a model name in a route handler — always read from KV
+- Never call `streamObject` without first checking the DB cache
+- Never hardcode a model name in a route handler — always read from the DB
