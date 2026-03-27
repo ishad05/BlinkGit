@@ -168,9 +168,17 @@ async function fetchIssues(
     per_page: 50,
   })
 
-  return (
-    res.data as Array<{ title: string; html_url: string; body: string | null }>
-  ).map((issue) => ({
+  // GitHub's issues API returns pull requests too — filter them out
+  const issues = (
+    res.data as Array<{
+      title: string
+      html_url: string
+      body: string | null
+      pull_request?: unknown
+    }>
+  ).filter((item) => !item.pull_request)
+
+  return issues.map((issue) => ({
     title: issue.title,
     url: issue.html_url,
     body: (issue.body ?? '').slice(0, 500),

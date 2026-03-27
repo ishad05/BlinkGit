@@ -36,7 +36,7 @@ async function migrate() {
   console.log('✓ analysis_cache table ready')
 
   // Code chunks + embeddings — used in Phase 3 for context-aware Q&A
-  // vector(768) matches Gemini text-embedding-004 output dimensions
+  // vector(3072) matches gemini-embedding-001 output dimensions
   try {
     await sql`
       CREATE TABLE IF NOT EXISTS code_chunks (
@@ -46,7 +46,7 @@ async function migrate() {
         chunk_name TEXT NOT NULL,
         chunk_type TEXT NOT NULL,
         content    TEXT NOT NULL,
-        embedding  vector(768),
+        embedding  vector(3072),
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         UNIQUE (repo_url, file_path, chunk_name)
       )
