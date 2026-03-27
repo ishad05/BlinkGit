@@ -1,25 +1,28 @@
-// TODO: implement PostgreSQL cache for repo analyses
-// All SQL for the analysis cache lives here — never write raw SQL elsewhere.
-//
-// Schema (run once on Railway):
-//   CREATE TABLE IF NOT EXISTS analysis_cache (
-//     repo_url  TEXT PRIMARY KEY,
-//     result    JSONB NOT NULL,
-//     cached_at TIMESTAMPTZ NOT NULL DEFAULT now()
-//   );
-
+import { sql } from './client.js'
 import type { Analysis } from '../agent/schema.js'
 
-export async function getCachedAnalysis(
-  _repoUrl: string,
-): Promise<Analysis | null> {
-  // TODO: query analysis_cache by repo_url
-  return null
+export async function getCachedAnalysis(repoUrl: string): Promise<Analysis | null> {
+  const rows = await sql<{ result: Analysis }[]>`
+    SELECT result
+    FROM analysis_cache
+    WHERE repo_url = ${repoUrl}
+  `
+  return rows[0]?.result ?? null
 }
 
-export async function setCachedAnalysis(
-  _repoUrl: string,
-  _analysis: Analysis,
-): Promise<void> {
-  // TODO: upsert into analysis_cache
+export async function setCachedAnalysis(repoUrl: string, analysis: Analysis): Promise<void> {
+  await sql`
+    INSERT INTO analysis_cache (repo_url, result, cached_at)
+    VALUES (${repoUrl}, ${JSON.stringify(analysis)}::jsonb, now())
+    ON CONFLICT (repo_url)
+    DO UPDATE SET
+      result    = ${JSON.stringify(analysis)}::jsonb,
+      cached_at = now()
+  `
+}
+
+export async function deleteCachedAnalysis(repoUrl: string): Promise<void> {
+  await sql`
+    DELETE FROM analysis_cache WHERE repo_url = ${repoUrl}
+  `
 }

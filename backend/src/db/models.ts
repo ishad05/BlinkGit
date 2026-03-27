@@ -1,19 +1,31 @@
-// TODO: implement model config storage in PostgreSQL (replaces Cloudflare KV)
-// All SQL for model config lives here — never write raw SQL elsewhere.
-//
-// Schema (run once on Railway):
-//   CREATE TABLE IF NOT EXISTS model_config (
-//     key   TEXT PRIMARY KEY,
-//     value TEXT NOT NULL
-//   );
-//   INSERT INTO model_config (key, value) VALUES ('selected_model', 'openai/gpt-4o')
-//   ON CONFLICT DO NOTHING;
+import { sql } from './client.js'
+
+const VALID_MODELS = [
+  'gemini/gemini-2.0-flash',
+  'gemini/gemini-1.5-flash',
+  'gemini/gemini-1.5-pro',
+] as const
+
+export type ModelId = (typeof VALID_MODELS)[number]
+
+export function isValidModel(value: string): value is ModelId {
+  return (VALID_MODELS as readonly string[]).includes(value)
+}
 
 export async function getSelectedModel(): Promise<string> {
-  // TODO: SELECT value FROM model_config WHERE key = 'selected_model'
-  return 'openai/gpt-4o'
+  const rows = await sql<{ value: string }[]>`
+    SELECT value FROM model_config WHERE key = 'selected_model'
+  `
+  return rows[0]?.value ?? 'gemini/gemini-2.0-flash'
 }
 
-export async function setSelectedModel(_modelId: string): Promise<void> {
-  // TODO: UPDATE model_config SET value = $1 WHERE key = 'selected_model'
+export async function setSelectedModel(modelId: string): Promise<void> {
+  await sql`
+    INSERT INTO model_config (key, value)
+    VALUES ('selected_model', ${modelId})
+    ON CONFLICT (key)
+    DO UPDATE SET value = EXCLUDED.value
+  `
 }
+
+export { VALID_MODELS }
