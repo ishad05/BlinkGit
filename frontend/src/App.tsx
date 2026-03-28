@@ -1,15 +1,15 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { RepoInput } from './components/RepoInput'
-import { OverviewPanel } from './components/OverviewPanel'
-import { IssueRanker } from './components/IssueRanker'
-import { ArchDiagram } from './components/ArchDiagram'
-import { ModelSwitcher } from './components/ModelSwitcher'
-import './index.css'
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { RepoInput } from "./components/RepoInput";
+import { OverviewPanel } from "./components/OverviewPanel";
+import { IssueRanker } from "./components/IssueRanker";
+import { ArchDiagram } from "./components/ArchDiagram";
+import { ModelSwitcher } from "./components/ModelSwitcher";
+import "./index.css";
 
 // TODO: wire up useObject streaming from @ai-sdk/react against POST /analyze
 // TODO: connect ModelSwitcher to GET/POST /models endpoint
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient();
 
 function AppInner() {
   return (
@@ -26,7 +26,7 @@ function AppInner() {
         <ArchDiagram architecture={undefined} />
       </main>
     </div>
-  )
+  );
 }
 
 export default function App() {
@@ -34,5 +34,5 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <AppInner />
     </QueryClientProvider>
-  )
+  );
 }
