@@ -1,8 +1,7 @@
 import { GitBranch } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
-
-const GITHUB_URL = "https://github.com/harshsngh1/BlinkGit";
+import { GITHUB_URL } from "@/lib/constants";
 
 export function Navbar() {
   return (

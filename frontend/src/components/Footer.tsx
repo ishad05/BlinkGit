@@ -1,13 +1,12 @@
 import { Logo } from "@/components/ui/logo";
 import { Separator } from "@/components/ui/separator";
-
-const GITHUB_URL = "https://github.com/harshsngh1/BlinkGit";
+import { GITHUB_URL, GITHUB_ISSUES_URL, GITHUB_RELEASES_URL, GITHUB_README_URL } from "@/lib/constants";
 
 const PROJECT_LINKS = [
   { label: "Source Code ↗", href: GITHUB_URL, external: true },
-  { label: "Docs", href: `${GITHUB_URL}#readme`, external: true },
-  { label: "Changelog", href: `${GITHUB_URL}/releases`, external: true },
-  { label: "Report an Issue ↗", href: `${GITHUB_URL}/issues`, external: true },
+  { label: "Docs", href: GITHUB_README_URL, external: true },
+  { label: "Changelog", href: GITHUB_RELEASES_URL, external: true },
+  { label: "Report an Issue ↗", href: GITHUB_ISSUES_URL, external: true },
 ];
 
 const STACK_LINKS = [
