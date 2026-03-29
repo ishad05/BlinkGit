@@ -190,3 +190,16 @@ npm run start      # node dist/index.js (production)
 - Never fetch the entire repo file tree — always limit depth to avoid LLM context limits
 - Never call `streamObject` without first checking the DB cache
 - Never hardcode a model name in a route handler — always read from the DB
+
+---
+
+## UI Skills
+
+Installed via `npx skills add ibelick/ui-skills`. Located in `frontend/.agents/skills/`.
+
+| Skill | Purpose |
+|---|---|
+| `baseline-ui` | Baseline UI quality and consistency rules |
+| `fixing-accessibility` | Accessibility fixes and best practices |
+| `fixing-metadata` | Metadata and SEO fixes |
+| `fixing-motion-performance` | Motion and animation performance fixes |

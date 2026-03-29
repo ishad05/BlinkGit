@@ -20,6 +20,9 @@ npm-debug.log*
 .vscode/
 .idea/
 
+# Claude Code memory
+.claude/
+
 # TypeScript
 *.tsbuildinfo
 

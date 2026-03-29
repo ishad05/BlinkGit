@@ -1,0 +1,53 @@
+import * as React from "react";
+import { cn } from "@/lib/utils";
+
+interface TerminalInputProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "prefix"> {
+  containerClassName?: string;
+}
+
+export const TerminalInput = React.forwardRef<
+  HTMLInputElement,
+  TerminalInputProps
+>(({ className, containerClassName, disabled, ...props }, ref) => {
+  return (
+    <div
+      className={cn(
+        "flex h-[52px] flex-1 items-center gap-2.5 border border-border bg-[#111111] px-4",
+        "focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-500/10",
+        disabled && "cursor-not-allowed opacity-50",
+        containerClassName,
+      )}
+    >
+      {/* Prompt symbol */}
+      <span
+        className="select-none font-mono text-sm text-green-500"
+        aria-hidden="true"
+      >
+        ❯
+      </span>
+
+      {/* Prefix hint */}
+      <span
+        className="hidden select-none font-mono text-sm text-muted-foreground/40 sm:block"
+        aria-hidden="true"
+      >
+        https://github.com/
+      </span>
+
+      {/* Actual input — green caret replaces the fake cursor span */}
+      <input
+        ref={ref}
+        disabled={disabled}
+        className={cn(
+          "flex-1 bg-transparent font-mono text-sm text-foreground outline-none",
+          "caret-green-500 placeholder:text-muted-foreground/40",
+          className,
+        )}
+        {...props}
+      />
+    </div>
+  );
+});
+
+TerminalInput.displayName = "TerminalInput";
