@@ -1,30 +1,37 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RepoInput } from "./components/RepoInput";
-import { OverviewPanel } from "./components/OverviewPanel";
-import { IssueRanker } from "./components/IssueRanker";
-import { ArchDiagram } from "./components/ArchDiagram";
-import { ModelSwitcher } from "./components/ModelSwitcher";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Navbar } from "@/components/Navbar";
+import { HeroSection } from "@/components/HeroSection";
+import { FeatureStrip } from "@/components/FeatureStrip";
+import { HowItWorks } from "@/components/HowItWorks";
+import { Footer } from "@/components/Footer";
 import "./index.css";
 
-// TODO: wire up useObject streaming from @ai-sdk/react against POST /analyze
-// TODO: connect ModelSwitcher to GET/POST /models endpoint
+// TODO(step-2): import OverviewPanel, IssueRanker, ArchDiagram, ModelSwitcher
+// TODO(step-3): wire useObject streaming from @ai-sdk/react against POST /analyze
+// TODO(step-3): connect ModelSwitcher to GET/POST /models endpoint
 
 const queryClient = new QueryClient();
 
 function AppInner() {
-  return (
-    <div className="min-h-screen bg-gray-950 text-white p-8">
-      <header className="mb-8 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">BlinkGit</h1>
-        <ModelSwitcher />
-      </header>
+  function handleAnalyze(repoUrl: string) {
+    // TODO(step-3): kick off streaming analysis
+    console.log("analyze", repoUrl);
+  }
 
-      <main className="max-w-4xl mx-auto flex flex-col gap-6">
-        <RepoInput onSubmit={() => {}} isLoading={false} />
-        <OverviewPanel overview={undefined} />
-        <IssueRanker issues={undefined} />
-        <ArchDiagram architecture={undefined} />
+  return (
+    <div className="dark min-h-screen bg-background text-foreground">
+      <Navbar />
+
+      <main>
+        <HeroSection onSubmit={handleAnalyze} isLoading={false} />
+        <FeatureStrip />
+        <HowItWorks />
+
+        {/* TODO(step-2): results area — OverviewPanel, IssueRanker, ArchDiagram */}
       </main>
+
+      <Footer />
     </div>
   );
 }
@@ -32,7 +39,9 @@ function AppInner() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AppInner />
+      <TooltipProvider>
+        <AppInner />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

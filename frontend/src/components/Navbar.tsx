@@ -1,4 +1,4 @@
-import { Github } from "lucide-react";
+import { GitBranch } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Button } from "@/components/ui/button";
 
@@ -36,7 +36,7 @@ export function Navbar() {
             className="gap-2 font-mono text-xs tracking-wide"
           >
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer">
-              <Github className="h-3.5 w-3.5" />
+              <GitBranch className="h-3.5 w-3.5" />
               View Source
               <span className="text-muted-foreground">↗</span>
             </a>
