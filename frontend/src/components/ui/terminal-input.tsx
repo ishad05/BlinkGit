@@ -35,24 +35,17 @@ export const TerminalInput = React.forwardRef<
         https://github.com/
       </span>
 
-      {/* Actual input */}
+      {/* Actual input — green caret replaces the fake cursor span */}
       <input
         ref={ref}
         disabled={disabled}
         className={cn(
-          "flex-1 bg-transparent font-mono text-sm text-foreground outline-none placeholder:text-muted-foreground/40",
+          "flex-1 bg-transparent font-mono text-sm text-foreground outline-none",
+          "caret-green-500 placeholder:text-muted-foreground/40",
           className,
         )}
         {...props}
       />
-
-      {/* Blinking cursor shown when empty / placeholder visible */}
-      {!props.value && (
-        <span
-          className="h-[18px] w-0.5 animate-[blink_1s_step-end_infinite] bg-green-500"
-          aria-hidden="true"
-        />
-      )}
     </div>
   );
 });
