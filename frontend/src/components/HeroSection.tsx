@@ -18,20 +18,35 @@ interface HeroSectionProps {
 
 export function HeroSection({ onSubmit, isLoading }: HeroSectionProps) {
   const [value, setValue] = useState("");
+  const [pasteError, setPasteError] = useState<string | null>(null);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = value.trim();
     if (!trimmed) return;
-    // Accept bare "owner/repo" or full URL
     const url = trimmed.startsWith("http")
       ? trimmed
       : `https://github.com/${trimmed}`;
     onSubmit(url);
   }
 
+  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const pasted = e.clipboardData.getData("text").trim();
+    if (!pasted.startsWith("http")) return; // not a URL — let normal paste happen
+
+    e.preventDefault();
+    const match = pasted.match(/^https?:\/\/github\.com\/([^/?#]+)\/([^/?#]+)/);
+    if (match) {
+      setValue(`${match[1]}/${match[2]}`);
+      setPasteError(null);
+    } else {
+      setPasteError("Invalid GitHub URL — expected https://github.com/owner/repo");
+    }
+  }
+
   function fillExample(repo: string) {
     setValue(repo);
+    setPasteError(null);
   }
 
   return (
@@ -69,11 +84,15 @@ export function HeroSection({ onSubmit, isLoading }: HeroSectionProps) {
       <form onSubmit={handleSubmit} className="flex w-full" noValidate>
         <TerminalInput
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            setValue(e.target.value);
+            setPasteError(null);
+          }}
+          onPaste={handlePaste}
           placeholder="owner/repo"
           disabled={isLoading}
           aria-label="GitHub repository URL"
-          containerClassName="border-r-0"
+          containerClassName={pasteError ? "border-r-0 border-red-500/60" : "border-r-0"}
         />
         <Button
           type="submit"
@@ -84,6 +103,13 @@ export function HeroSection({ onSubmit, isLoading }: HeroSectionProps) {
           {!isLoading && <ArrowRight className="h-4 w-4" />}
         </Button>
       </form>
+
+      {/* Paste error */}
+      {pasteError && (
+        <p className="mt-2 w-full font-mono text-[11px] text-red-400/80">
+          ✕ {pasteError}
+        </p>
+      )}
 
       {/* Example repos */}
       <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
