@@ -73,38 +73,48 @@ async function fetchFileTree(
   )
 
   const rootItems = rootRes.data.tree as TreeItem[]
-  const lines: string[] = []
-  let dirsFetched = 0
+
+  const rootFiles: string[] = []
+  const dirsToFetch: TreeItem[] = []
 
   for (const item of rootItems) {
     if (item.type === 'tree') {
-      if (SKIP_DIRS.has(item.path)) continue
-      lines.push(`${item.path}/`)
+      if (!SKIP_DIRS.has(item.path)) dirsToFetch.push(item)
+    } else {
+      if (!isBinary(item.path)) rootFiles.push(item.path)
+    }
+  }
 
-      // Cap subdirectory fetches to avoid hitting rate limits on huge repos
-      if (dirsFetched >= 20) continue
-      dirsFetched++
-
+  // Fetch all subdirectories in parallel, capped at 20
+  const subdirResults = await Promise.all(
+    dirsToFetch.slice(0, 20).map(async (dir) => {
       try {
         const subRes = await octokit.request(
           'GET /repos/{owner}/{repo}/git/trees/{tree_sha}',
-          { owner, repo, tree_sha: item.sha },
+          { owner, repo, tree_sha: dir.sha },
         )
         const subItems = subRes.data.tree as TreeItem[]
+        const subLines: string[] = []
         for (const sub of subItems) {
           if (sub.type === 'tree') {
-            if (!SKIP_DIRS.has(sub.path)) lines.push(`  ${sub.path}/`)
+            if (!SKIP_DIRS.has(sub.path)) subLines.push(`  ${sub.path}/`)
           } else {
-            if (!isBinary(sub.path)) lines.push(`  ${sub.path}`)
+            if (!isBinary(sub.path)) subLines.push(`  ${sub.path}`)
           }
         }
+        return { dir: dir.path, lines: subLines }
       } catch {
-        // Subdirectory fetch failed — skip silently, root entry already added
+        return { dir: dir.path, lines: [] }
       }
-    } else {
-      if (!isBinary(item.path)) lines.push(item.path)
-    }
+    }),
+  )
+
+  const lines: string[] = []
+  for (const { dir, lines: subLines } of subdirResults) {
+    lines.push(`${dir}/`)
+    lines.push(...subLines)
   }
+  lines.push(...rootFiles)
 
   return lines.join('\n')
 }
