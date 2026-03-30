@@ -5,6 +5,11 @@ import { analyzeRoute } from './routes/analyze.js'
 import { getModelsRoute, postModelsRoute } from './routes/models.js'
 import { chatRoute } from './routes/chat.js'
 
+const REQUIRED_ENV = ['GITHUB_TOKEN', 'GOOGLE_API_KEY', 'DATABASE_URL']
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) throw new Error(`Missing required env var: ${key}`)
+}
+
 const app = new Hono()
 
 // Allow the frontend (any origin in dev, lock down in prod via FRONTEND_URL env)
