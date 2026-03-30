@@ -1,4 +1,5 @@
 import { experimental_useObject as useObject } from "@ai-sdk/react";
+import { useCallback } from "react";
 import { z } from "zod";
 import type { AnalysisData } from "@/components/ResultsPage";
 
@@ -67,9 +68,14 @@ export function useAnalysis() {
     schema: analysisSchema,
   });
 
+  const stableSubmit = useCallback(
+    (repoUrl: string) => submit({ repoUrl }),
+    [submit],
+  );
+
   return {
     data: (object ?? {}) as AnalysisData,
-    submit: (repoUrl: string) => submit({ repoUrl }),
+    submit: stableSubmit,
     isLoading,
     error,
     stop,

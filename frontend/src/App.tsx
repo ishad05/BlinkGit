@@ -19,17 +19,17 @@ function getRepoFromUrl(): string | null {
 function AppInner() {
   const { data, submit, isLoading, error, stop } = useAnalysis();
   const [currentRepo, setCurrentRepo] = useState<string | null>(() => getRepoFromUrl());
-  const didAutoSubmit = useRef(false);
+  const submitRef = useRef(submit);
+  submitRef.current = submit;
 
-  // On mount (or when submit becomes available), auto-trigger if URL has a repo
+  // Run once on mount — if URL has a repo, auto-trigger analysis
   useEffect(() => {
-    if (didAutoSubmit.current) return;
     const repo = getRepoFromUrl();
     if (repo) {
-      didAutoSubmit.current = true;
-      submit(`https://github.com/${repo}`);
+      submitRef.current(`https://github.com/${repo}`);
     }
-  }, [submit]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle browser back/forward navigation
   useEffect(() => {

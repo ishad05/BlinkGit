@@ -7,6 +7,7 @@ const BACKEND_URL =
   "http://localhost:3000";
 
 const MODEL_LABELS: Record<string, string> = {
+  "gemini/gemini-2.5-flash": "Gemini 2.5 Flash",
   "gemini/gemini-2.0-flash": "Gemini 2.0 Flash",
   "gemini/gemini-1.5-flash": "Gemini 1.5 Flash",
   "gemini/gemini-1.5-pro": "Gemini 1.5 Pro",

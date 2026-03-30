@@ -42,8 +42,13 @@ export async function analyzeRoute(c: Context): Promise<Response> {
     return c.json({ error: `Failed to fetch repository: ${message}` }, 502)
   }
 
-  // 5. Get selected model from DB
-  const modelId = await getSelectedModel()
+  // 5. Get selected model from DB (non-fatal — fall back to default if DB is unavailable)
+  let modelId = 'gemini/gemini-2.0-flash'
+  try {
+    modelId = await getSelectedModel()
+  } catch (err) {
+    console.warn('Could not read model from DB, using default:', err)
+  }
 
   // 6. Run AI analysis — returns a streamText result
   const result = analyzeRepo(context, modelId, googleApiKey)

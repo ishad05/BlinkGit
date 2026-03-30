@@ -1,6 +1,7 @@
 import { sql } from './client.js'
 
 const VALID_MODELS = [
+  'gemini/gemini-2.5-flash',
   'gemini/gemini-2.0-flash',
   'gemini/gemini-1.5-flash',
   'gemini/gemini-1.5-pro',
