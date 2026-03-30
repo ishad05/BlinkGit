@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navbar } from "@/components/Navbar";
@@ -12,20 +12,53 @@ import "./index.css";
 
 const queryClient = new QueryClient();
 
+function getRepoFromUrl(): string | null {
+  return new URLSearchParams(window.location.search).get("repo");
+}
+
 function AppInner() {
   const { data, submit, isLoading, error, stop } = useAnalysis();
-  const [currentRepo, setCurrentRepo] = useState<string | null>(null);
+  const [currentRepo, setCurrentRepo] = useState<string | null>(() => getRepoFromUrl());
+  const didAutoSubmit = useRef(false);
+
+  // On mount (or when submit becomes available), auto-trigger if URL has a repo
+  useEffect(() => {
+    if (didAutoSubmit.current) return;
+    const repo = getRepoFromUrl();
+    if (repo) {
+      didAutoSubmit.current = true;
+      submit(`https://github.com/${repo}`);
+    }
+  }, [submit]);
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    function onPopState() {
+      const repo = getRepoFromUrl();
+      if (repo) {
+        setCurrentRepo(repo);
+        submit(`https://github.com/${repo}`);
+      } else {
+        stop();
+        setCurrentRepo(null);
+      }
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [submit, stop]);
 
   function handleAnalyze(repoUrl: string) {
     const match = repoUrl.match(/github\.com\/([^/?#]+\/[^/?#]+)/);
     const repo = match ? match[1].replace(/\.git$/, "") : repoUrl;
     setCurrentRepo(repo);
+    window.history.pushState({}, "", `?repo=${encodeURIComponent(repo)}`);
     submit(repoUrl);
   }
 
   function handleNewAnalysis() {
     stop();
     setCurrentRepo(null);
+    window.history.pushState({}, "", window.location.pathname);
   }
 
   if (currentRepo) {
