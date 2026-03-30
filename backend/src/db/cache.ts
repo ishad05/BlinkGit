@@ -21,8 +21,9 @@ export async function setCachedAnalysis(repoUrl: string, analysis: Analysis): Pr
   `
 }
 
-export async function deleteCachedAnalysis(repoUrl: string): Promise<void> {
-  await sql`
-    DELETE FROM analysis_cache WHERE repo_url = ${repoUrl}
+export async function deleteCachedAnalysis(repoUrl: string): Promise<boolean> {
+  const rows = await sql<{ repo_url: string }[]>`
+    DELETE FROM analysis_cache WHERE repo_url = ${repoUrl} RETURNING repo_url
   `
+  return rows.length > 0
 }
