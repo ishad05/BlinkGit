@@ -1,4 +1,4 @@
-import { streamText, Output, zodSchema } from 'ai'
+import { streamObject } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { analysisSchema } from './schema.js'
 import type { GitHubContext } from './github.js'
@@ -76,9 +76,9 @@ export function analyzeRepo(
   // modelId is stored as "gemini/gemini-2.0-flash" — strip the provider prefix
   const modelName = modelId.includes('/') ? modelId.split('/').slice(1).join('/') : modelId
 
-  return streamText({
+  return streamObject({
     model: google(modelName),
-    output: Output.object({ schema: zodSchema(analysisSchema) }),
+    schema: analysisSchema,
     prompt: buildPrompt(context),
   })
 }

@@ -67,7 +67,11 @@ export function OverviewPanel({ overview }: OverviewPanelProps) {
         ) : (
           <div className="flex gap-2">
             {[80, 100, 64, 96, 72].map((w) => (
-              <Skeleton key={w} className="h-7" style={{ width: w }} />
+              <div
+                key={w}
+                className="h-7 animate-pulse bg-white/5"
+                style={{ width: w }}
+              />
             ))}
           </div>
         )}

@@ -41,5 +41,5 @@ ${repoContext}`
     messages: messages as any,
   })
 
-  return result.toDataStreamResponse()
+  return result.toTextStreamResponse()
 }
