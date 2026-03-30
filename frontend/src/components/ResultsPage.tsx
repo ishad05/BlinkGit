@@ -157,7 +157,7 @@ export interface Issue {
 }
 
 export interface Architecture {
-  nodes: Array<{ id: string; label: string; type: string }>;
+  nodes: Array<{ id: string; label: string; type: string; description: string }>;
   edges: Array<{ from: string; to: string; label?: string }>;
 }
 

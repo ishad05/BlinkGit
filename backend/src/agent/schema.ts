@@ -15,7 +15,12 @@ export const overviewSchema = z.object({
 })
 
 export const architectureSchema = z.object({
-  nodes: z.array(z.object({ id: z.string(), label: z.string(), type: z.string() })),
+  nodes: z.array(z.object({
+    id: z.string(),
+    label: z.string(),
+    type: z.string(),
+    description: z.string(),
+  })),
   edges: z.array(z.object({ from: z.string(), to: z.string(), label: z.string().optional() })),
 })
 

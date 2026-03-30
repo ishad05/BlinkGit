@@ -58,8 +58,9 @@ ${readme || '(no README found)'}
 
 Produce an architecture diagram as nodes and directed edges.
 - Identify 5–12 key components: services, modules, layers, data stores, external APIs
-- Node types: service | module | database | external | frontend | backend | config
-- Edge labels: verbs like calls, reads, writes, extends, imports
+- Node types: service | module | database | external | frontend | backend | config | api | middleware | util
+- For each node provide: a short label, its type, and a one-sentence description of what it does
+- Edge labels: verbs like calls, reads, writes, extends, imports, streams
 - Use short, descriptive labels`
 }
 
