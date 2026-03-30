@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -10,6 +10,86 @@ import { SetupPanel } from "@/components/SetupPanel";
 import { IssueRanker } from "@/components/IssueRanker";
 import { ModelSwitcher } from "@/components/ModelSwitcher";
 import { ChatPanel } from "@/components/ChatPanel";
+
+// ---------------------------------------------------------------------------
+// Analysis progress indicator — shown while waiting for the first stream chunk
+// ---------------------------------------------------------------------------
+
+const STAGES = [
+  "Connecting to GitHub...",
+  "Fetching repository structure...",
+  "Reading README and issues...",
+  "Generating AI analysis...",
+  "Streaming results...",
+];
+
+// Approximate durations (ms) before advancing to the next stage
+const STAGE_DELAYS = [1200, 2500, 3500, 5000];
+
+function AnalysisProgress() {
+  const [stageIndex, setStageIndex] = useState(0);
+  const [dots, setDots] = useState("");
+
+  useEffect(() => {
+    if (stageIndex >= STAGE_DELAYS.length) return;
+    const t = setTimeout(
+      () => setStageIndex((i) => i + 1),
+      STAGE_DELAYS[stageIndex],
+    );
+    return () => clearTimeout(t);
+  }, [stageIndex]);
+
+  useEffect(() => {
+    const t = setInterval(
+      () => setDots((d) => (d.length >= 3 ? "" : d + ".")),
+      400,
+    );
+    return () => clearInterval(t);
+  }, []);
+
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-6">
+      <div className="w-full max-w-sm space-y-1 border border-border/40 bg-white/[0.02] p-6">
+        <p className="mb-4 font-mono text-[10px] tracking-[0.12em] text-muted-foreground">
+          ANALYSIS IN PROGRESS
+        </p>
+        {STAGES.map((label, i) => {
+          const done = i < stageIndex;
+          const active = i === stageIndex;
+          return (
+            <div
+              key={label}
+              className="flex items-center gap-3 font-mono text-xs"
+            >
+              <span
+                className={
+                  done
+                    ? "text-green-500"
+                    : active
+                      ? "text-green-400"
+                      : "text-border"
+                }
+              >
+                {done ? "✓" : active ? "›" : "·"}
+              </span>
+              <span
+                className={
+                  done
+                    ? "text-muted-foreground line-through"
+                    : active
+                      ? "text-foreground"
+                      : "text-border"
+                }
+              >
+                {active ? `${label.replace(/\.\.\.$/, "")}${dots}` : label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Shared types (mirror backend schema — used by all panels)
@@ -111,7 +191,8 @@ export function ResultsPage({
         <ResultsSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
         <main className="flex-1 overflow-y-auto p-6">
-          {activeTab === "overview" && (
+          {isStreaming && !analysis.overview && <AnalysisProgress />}
+          {(!isStreaming || analysis.overview) && activeTab === "overview" && (
             <OverviewPanel overview={analysis.overview} />
           )}
           {activeTab === "architecture" && (
