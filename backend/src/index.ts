@@ -3,6 +3,7 @@ import { cors } from 'hono/cors'
 import { serve } from '@hono/node-server'
 import { analyzeRoute } from './routes/analyze.js'
 import { getModelsRoute, postModelsRoute } from './routes/models.js'
+import { chatRoute } from './routes/chat.js'
 
 const app = new Hono()
 
@@ -16,6 +17,7 @@ app.use('*', cors({
 app.post('/analyze', analyzeRoute)
 app.get('/models', getModelsRoute)
 app.post('/models', postModelsRoute)
+app.post('/chat', chatRoute)
 
 const port = Number(process.env.PORT ?? 3000)
 

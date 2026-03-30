@@ -9,6 +9,7 @@ import { ArchDiagram } from "@/components/ArchDiagram";
 import { SetupPanel } from "@/components/SetupPanel";
 import { IssueRanker } from "@/components/IssueRanker";
 import { ModelSwitcher } from "@/components/ModelSwitcher";
+import { ChatPanel } from "@/components/ChatPanel";
 
 // ---------------------------------------------------------------------------
 // Shared types (mirror backend schema — used by all panels)
@@ -123,11 +124,7 @@ export function ResultsPage({
             <IssueRanker issues={analysis.issues} />
           )}
           {activeTab === "chat" && (
-            <div className="flex h-full items-center justify-center">
-              <p className="font-mono text-xs text-muted-foreground">
-                Chat — coming soon
-              </p>
-            </div>
+            <ChatPanel repo={repo} analysis={analysis} />
           )}
         </main>
       </div>
