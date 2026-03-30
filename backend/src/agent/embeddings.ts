@@ -1,61 +1,38 @@
 // ---------------------------------------------------------------------------
-// Embeddings — Gemini gemini-embedding-001 + pgvector storage + semantic search
+// Embeddings — @ai-sdk/google + pgvector storage + semantic search
 //
 // Requires pgvector to be installed on your PostgreSQL instance.
 // Railway provides this out of the box. Local: brew install pgvector
 // ---------------------------------------------------------------------------
 
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { embed, embedMany } from 'ai'
+import { google } from '@ai-sdk/google'
 import { sql } from '../db/client.js'
 import type { CodeChunk } from './chunker.js'
 
-// gemini-embedding-001 produces 3072-dimensional vectors by default
-const EMBEDDING_MODEL = 'gemini-embedding-001'
+// gemini-embedding-exp-03-07 produces 3072-dimensional vectors (matches DB schema)
+const EMBEDDING_MODEL = google.embeddingModel('gemini-embedding-exp-03-07')
 
 // ---------------------------------------------------------------------------
 // Embed a single text string
 // ---------------------------------------------------------------------------
 
-export async function embedText(text: string, apiKey: string): Promise<number[]> {
-  const genAI = new GoogleGenerativeAI(apiKey)
-  const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL })
-  const result = await model.embedContent(text)
-  return result.embedding.values
+export async function embedText(text: string): Promise<number[]> {
+  const { embedding } = await embed({ model: EMBEDDING_MODEL, value: text })
+  return embedding
 }
 
 // ---------------------------------------------------------------------------
 // Embed a batch of chunks
-// Gemini supports batch embedding — more efficient than one call per chunk
+// embedMany handles batching internally
 // ---------------------------------------------------------------------------
 
-// Gemini batch embedding API limit
-const BATCH_SIZE = 50
-
-export async function embedChunks(
-  chunks: CodeChunk[],
-  apiKey: string,
-): Promise<number[][]> {
+export async function embedChunks(chunks: CodeChunk[]): Promise<number[][]> {
   if (chunks.length === 0) return []
 
-  const genAI = new GoogleGenerativeAI(apiKey)
-  const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL })
-  const allEmbeddings: number[][] = []
-
-  // Process in batches to stay within Gemini API limits
-  for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
-    const batch = chunks.slice(i, i + BATCH_SIZE)
-    const result = await model.batchEmbedContents({
-      requests: batch.map((chunk) => ({
-        content: {
-          role: 'user',
-          parts: [{ text: `${chunk.type} ${chunk.name}:\n${chunk.code}` }],
-        },
-      })),
-    })
-    allEmbeddings.push(...result.embeddings.map((e) => e.values))
-  }
-
-  return allEmbeddings
+  const values = chunks.map((chunk) => `${chunk.type} ${chunk.name}:\n${chunk.code}`)
+  const { embeddings } = await embedMany({ model: EMBEDDING_MODEL, values })
+  return embeddings
 }
 
 // ---------------------------------------------------------------------------
@@ -112,10 +89,9 @@ export interface SearchResult {
 export async function searchChunks(
   repoUrl: string,
   query: string,
-  apiKey: string,
   limit = 5,
 ): Promise<SearchResult[]> {
-  const queryEmbedding = await embedText(query, apiKey)
+  const queryEmbedding = await embedText(query)
   const vectorLiteral = `[${queryEmbedding.join(',')}]`
 
   const rows = await sql<SearchResult[]>`
