@@ -1,83 +1,81 @@
-import { experimental_useObject as useObject } from "@ai-sdk/react";
-import { useCallback } from "react";
-import { z } from "zod";
+import { useState, useCallback, useRef } from "react";
 import type { AnalysisData } from "@/components/ResultsPage";
 
 const BACKEND_URL =
   (import.meta.env.VITE_BACKEND_URL as string | undefined) ??
   "http://localhost:3000";
 
-// Mirror of backend schema — used by useObject for progressive partial typing
-const analysisSchema = z.object({
-  overview: z.object({
-    purpose: z.string(),
-    techStack: z.array(z.string()),
-    keyFiles: z.array(z.string()),
-    highlights: z.array(z.string()),
-    useCases: z.array(z.string()),
-    coreWorkflow: z.string(),
-    majorModules: z.array(
-      z.object({
-        name: z.string(),
-        description: z.string(),
-        type: z.enum([
-          "service",
-          "ui",
-          "api",
-          "config",
-          "database",
-          "middleware",
-          "util",
-        ]),
-      }),
-    ),
-  }),
-  setup: z.object({
-    prerequisites: z.array(z.string()),
-    steps: z.array(z.object({ label: z.string(), command: z.string() })),
-    envVars: z.array(z.object({ key: z.string(), description: z.string() })),
-    runCommand: z.string(),
-  }),
-  issues: z.array(
-    z.object({
-      title: z.string(),
-      url: z.string(),
-      difficulty: z.enum(["beginner", "moderate", "high"]),
-      reason: z.string(),
-      comments: z.number().optional(),
-      daysOpen: z.number().optional(),
-    }),
-  ),
-  architecture: z.object({
-    nodes: z.array(
-      z.object({ id: z.string(), label: z.string(), type: z.string() }),
-    ),
-    edges: z.array(
-      z.object({
-        from: z.string(),
-        to: z.string(),
-        label: z.string().optional(),
-      }),
-    ),
-  }),
-});
-
 export function useAnalysis() {
-  const { object, submit, isLoading, error, stop } = useObject({
-    api: `${BACKEND_URL}/analyze`,
-    schema: analysisSchema,
-  });
+  const [data, setData] = useState<AnalysisData>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const stableSubmit = useCallback(
-    (repoUrl: string) => submit({ repoUrl }),
-    [submit],
-  );
+  const submit = useCallback(async (repoUrl: string) => {
+    // Cancel any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-  return {
-    data: (object ?? {}) as AnalysisData,
-    submit: stableSubmit,
-    isLoading,
-    error,
-    stop,
-  };
+    setData({});
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repoUrl }),
+        signal: controller.signal,
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => `HTTP ${res.status}`);
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      if (!res.body) throw new Error("No response body");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const raw = line.slice(6).trim();
+          if (raw === "[DONE]") break;
+
+          try {
+            const { section, payload } = JSON.parse(raw) as {
+              section: keyof AnalysisData;
+              payload: unknown;
+            };
+            setData((prev) => ({ ...prev, [section]: payload }));
+          } catch {
+            // Malformed SSE line — skip
+          }
+        }
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name !== "AbortError") {
+        setError(err);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const stop = useCallback(() => {
+    abortRef.current?.abort();
+    setIsLoading(false);
+  }, []);
+
+  return { data, submit, isLoading, error, stop };
 }

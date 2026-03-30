@@ -3,6 +3,50 @@ import { getCachedAnalysis, setCachedAnalysis } from '../db/cache.js'
 import { fetchRepoContext } from '../agent/github.js'
 import { getSelectedModel } from '../db/models.js'
 import { analyzeRepo } from '../agent/analyze.js'
+import type { Analysis } from '../agent/schema.js'
+
+const enc = new TextEncoder()
+
+function sseEvent(data: object): Uint8Array {
+  return enc.encode(`data: ${JSON.stringify(data)}\n\n`)
+}
+
+function sseDone(): Uint8Array {
+  return enc.encode('data: [DONE]\n\n')
+}
+
+function sseResponse(
+  build: (controller: ReadableStreamDefaultController) => Promise<void>,
+): Response {
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        await build(controller)
+      } finally {
+        controller.close()
+      }
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    },
+  })
+}
+
+// Send a cached full analysis as SSE events (same format as live analysis)
+function streamCached(cached: Analysis): Response {
+  return sseResponse(async (controller) => {
+    controller.enqueue(sseEvent({ section: 'overview', payload: cached.overview }))
+    controller.enqueue(sseEvent({ section: 'architecture', payload: cached.architecture }))
+    controller.enqueue(sseEvent({ section: 'setup', payload: cached.setup }))
+    controller.enqueue(sseEvent({ section: 'issues', payload: cached.issues }))
+    controller.enqueue(sseDone())
+  })
+}
 
 export async function analyzeRoute(c: Context): Promise<Response> {
   // 1. Parse + validate body
@@ -18,18 +62,17 @@ export async function analyzeRoute(c: Context): Promise<Response> {
     return c.json({ error: 'repoUrl is required and must be a string' }, 400)
   }
 
-  // 2. Check required env vars early — fail fast before any async work
+  // 2. Check required env vars
   const githubToken = process.env.GITHUB_TOKEN
   const googleApiKey = process.env.GOOGLE_API_KEY
   if (!githubToken) return c.json({ error: 'GITHUB_TOKEN not configured' }, 500)
   if (!googleApiKey) return c.json({ error: 'GOOGLE_API_KEY not configured' }, 500)
 
-  // 3. Cache hit — return immediately as JSON
+  // 3. Cache hit — stream sections from cache
   try {
     const cached = await getCachedAnalysis(repoUrl)
-    if (cached) return c.json(cached)
+    if (cached) return streamCached(cached)
   } catch (err) {
-    // Cache read failure is non-fatal — proceed to live analysis
     console.error('Cache read failed:', err)
   }
 
@@ -42,22 +85,25 @@ export async function analyzeRoute(c: Context): Promise<Response> {
     return c.json({ error: `Failed to fetch repository: ${message}` }, 502)
   }
 
-  // 5. Get selected model from DB (non-fatal — fall back to default if DB is unavailable)
-  let modelId = 'gemini/gemini-2.0-flash'
+  // 5. Get selected model (non-fatal)
+  let modelId = 'gemini/gemini-2.5-flash'
   try {
     modelId = await getSelectedModel()
   } catch (err) {
     console.warn('Could not read model from DB, using default:', err)
   }
 
-  // 6. Run AI analysis — returns a streamText result
-  const result = analyzeRepo(context, modelId, googleApiKey)
+  // 6. Stream sections to client as they complete, cache the full result at the end
+  return sseResponse(async (controller) => {
+    const result = await analyzeRepo(context, modelId, googleApiKey, (event) => {
+      controller.enqueue(sseEvent({ section: event.section, payload: event.payload }))
+    })
 
-  // 7. Cache the final object in the background (don't await — let the stream flow)
-  result.object
-    .then((obj) => setCachedAnalysis(repoUrl, obj))
-    .catch((err: unknown) => console.error('Cache write failed:', err))
+    controller.enqueue(sseDone())
 
-  // 8. Stream response to client
-  return result.toTextStreamResponse()
+    // Cache in background
+    setCachedAnalysis(repoUrl, result).catch((err: unknown) =>
+      console.error('Cache write failed:', err),
+    )
+  })
 }
