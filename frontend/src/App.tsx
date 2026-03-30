@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useThemeStore } from "@/stores/themeStore";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navbar } from "@/components/Navbar";
@@ -17,7 +18,17 @@ function getRepoFromUrl(): string | null {
 }
 
 function AppInner() {
+  const { theme } = useThemeStore();
   const { data, submit, isLoading, error, stop } = useAnalysis();
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+  }, [theme]);
   const [currentRepo, setCurrentRepo] = useState<string | null>(() => getRepoFromUrl());
   const submitRef = useRef(submit);
   submitRef.current = submit;
@@ -74,7 +85,7 @@ function AppInner() {
   }
 
   return (
-    <div className="dark min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       <main>
         <HeroSection onSubmit={handleAnalyze} isLoading={isLoading} />

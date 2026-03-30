@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Moon, Sun } from "lucide-react";
+import { useThemeStore } from "@/stores/themeStore";
 import { Logo } from "@/components/ui/logo";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Button } from "@/components/ui/button";
@@ -186,6 +187,7 @@ export function ResultsPage({
   onNewAnalysis,
 }: ResultsPageProps) {
   const [activeTab, setActiveTab] = useState<ResultsTab>("overview");
+  const { theme, toggle: toggleTheme } = useThemeStore();
 
   const hasData = !!(
     analysis.overview ||
@@ -220,6 +222,18 @@ export function ResultsPage({
         </span>
 
         <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className="flex h-7 w-7 items-center justify-center border border-border/50 text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-3.5 w-3.5" />
+            ) : (
+              <Moon className="h-3.5 w-3.5" />
+            )}
+          </button>
           <ModelSwitcher />
           <Button
             size="sm"
