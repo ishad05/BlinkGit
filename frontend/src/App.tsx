@@ -67,6 +67,7 @@ function AppInner() {
         repo={currentRepo}
         analysis={data}
         isStreaming={isLoading}
+        error={error ?? null}
         onNewAnalysis={handleNewAnalysis}
       />
     );
@@ -76,22 +77,6 @@ function AppInner() {
     <div className="dark min-h-screen bg-background text-foreground">
       <Navbar />
       <main>
-        {error && (
-          <div className="mx-auto max-w-xl px-6 pt-4">
-            <div className="flex items-center gap-3 border border-destructive/40 bg-destructive/5 px-4 py-3">
-              <span className="flex-1 font-mono text-xs text-destructive">
-                {error.message}
-              </span>
-              <button
-                type="button"
-                onClick={handleNewAnalysis}
-                className="font-mono text-[10px] text-muted-foreground hover:text-foreground"
-              >
-                dismiss
-              </button>
-            </div>
-          </div>
-        )}
         <HeroSection onSubmit={handleAnalyze} isLoading={isLoading} />
         <FeatureStrip />
         <HowItWorks />

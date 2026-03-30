@@ -12,6 +12,35 @@ import { ModelSwitcher } from "@/components/ModelSwitcher";
 import { ChatPanel } from "@/components/ChatPanel";
 
 // ---------------------------------------------------------------------------
+// Error panel — shown when the analysis request fails with no data
+// ---------------------------------------------------------------------------
+
+function ErrorPanel({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center">
+      <div className="w-full max-w-sm space-y-4 border border-red-500/40 bg-red-500/5 p-6">
+        <p className="font-mono text-[10px] tracking-[0.12em] text-red-400/70">
+          ANALYSIS FAILED
+        </p>
+        <p className="font-mono text-sm text-red-300 break-words">
+          {error.message}
+        </p>
+        <p className="font-mono text-[11px] text-muted-foreground">
+          Check that the repository is public and the URL is correct.
+        </p>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="font-mono text-[11px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+        >
+          ← new analysis
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Analysis progress indicator — shown while waiting for the first stream chunk
 // ---------------------------------------------------------------------------
 
@@ -145,6 +174,7 @@ interface ResultsPageProps {
   repo: string; // "owner/repo"
   analysis: AnalysisData;
   isStreaming: boolean;
+  error: Error | null;
   onNewAnalysis: () => void;
 }
 
@@ -152,17 +182,34 @@ export function ResultsPage({
   repo,
   analysis,
   isStreaming,
+  error,
   onNewAnalysis,
 }: ResultsPageProps) {
   const [activeTab, setActiveTab] = useState<ResultsTab>("overview");
+
+  const hasData = !!(
+    analysis.overview ||
+    analysis.issues ||
+    analysis.architecture ||
+    analysis.setup
+  );
+
+  // Show the progress indicator while streaming with no data yet,
+  // OR before the auto-submit has fired (isStreaming=false, no data, no error).
+  const showProgress = !hasData && !error;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       {/* Top navbar */}
       <header className="flex h-12 flex-shrink-0 items-center gap-0 border-b border-border/50 px-4">
-        <a href="/" aria-label="Home" className="mr-4">
+        <button
+          type="button"
+          onClick={onNewAnalysis}
+          aria-label="Home"
+          className="mr-4"
+        >
           <Logo size="sm" />
-        </a>
+        </button>
         <span className="font-mono text-xs text-muted-foreground">/</span>
         <span className="ml-2 font-mono text-xs text-foreground">{repo}</span>
         <span className="ml-3">
@@ -191,20 +238,33 @@ export function ResultsPage({
         <ResultsSidebar activeTab={activeTab} onTabChange={setActiveTab} />
 
         <main className="flex-1 overflow-y-auto p-6">
-          {isStreaming && !analysis.overview && <AnalysisProgress />}
-          {(!isStreaming || analysis.overview) && activeTab === "overview" && (
+          {showProgress && <AnalysisProgress />}
+          {error && hasData && (
+            <div className="mb-4 flex items-start gap-3 border border-red-500/40 bg-red-500/5 px-4 py-3">
+              <span className="flex-1 font-mono text-xs text-red-400">
+                Analysis interrupted: {error.message}
+              </span>
+              <span className="font-mono text-[10px] text-muted-foreground">
+                partial results shown below
+              </span>
+            </div>
+          )}
+          {error && !hasData && (
+            <ErrorPanel error={error} onRetry={onNewAnalysis} />
+          )}
+          {!showProgress && !error && activeTab === "overview" && (
             <OverviewPanel overview={analysis.overview} />
           )}
-          {activeTab === "architecture" && (
+          {!showProgress && activeTab === "architecture" && (
             <ArchDiagram architecture={analysis.architecture} />
           )}
-          {activeTab === "setup" && (
+          {!showProgress && activeTab === "setup" && (
             <SetupPanel setup={analysis.setup} />
           )}
-          {activeTab === "issues" && (
+          {!showProgress && activeTab === "issues" && (
             <IssueRanker issues={analysis.issues} />
           )}
-          {activeTab === "chat" && (
+          {!showProgress && activeTab === "chat" && (
             <ChatPanel repo={repo} analysis={analysis} />
           )}
         </main>
