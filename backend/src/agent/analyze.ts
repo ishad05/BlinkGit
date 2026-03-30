@@ -38,17 +38,26 @@ ${issuesList}
 
 ---
 
-Produce a structured analysis with three parts:
+Produce a structured analysis with five parts:
 
-1. **Overview** — What this repo does, its tech stack, the most important files, and 2-4 highlights worth knowing.
+1. **Overview** — What this repo does, its tech stack, the most important files, and 2-4 highlights worth knowing. Also include:
+   - \`useCases\`: 3-5 bullet points describing who uses this and what problems it solves
+   - \`coreWorkflow\`: a 2-4 sentence narrative of how data or requests flow through the system end-to-end
+   - \`majorModules\`: 4-8 significant components/services/layers, each with a name, one-line description, and a type from: \`service\`, \`ui\`, \`api\`, \`config\`, \`database\`, \`middleware\`, \`util\`
 
-2. **Issue difficulty** — For every issue listed above, classify it as:
+2. **Setup guide** — Extract from the README, package.json, Makefile, Dockerfile, or any config files:
+   - \`prerequisites\`: list of required runtimes, tools, or accounts (e.g. "Node.js 20+", "Docker", "PostgreSQL")
+   - \`steps\`: numbered installation steps, each with a short \`label\` and the exact terminal \`command\`
+   - \`envVars\`: required environment variables with their \`key\` and a \`description\` (never include real values)
+   - \`runCommand\`: the single command to start the project locally (e.g. \`npm run dev\`)
+
+3. **Issue difficulty** — For every issue listed above, classify it as:
    - \`beginner\`: small scope, well-defined, good for first-time contributors
    - \`moderate\`: requires understanding of the codebase, some domain knowledge
    - \`high\`: architectural changes, deep domain expertise, or unclear scope
    Include a one-sentence reason for each rating.
 
-3. **Architecture diagram** — Identify the key components (services, modules, layers, data stores, external APIs) as nodes, and their relationships as directed edges. Use short, descriptive labels. Aim for 5–12 nodes.
+4. **Architecture diagram** — Identify the key components (services, modules, layers, data stores, external APIs) as nodes, and their relationships as directed edges. Use short, descriptive labels. Aim for 5–12 nodes.
    - Node types: use one of: \`service\`, \`module\`, \`database\`, \`external\`, \`frontend\`, \`backend\`, \`config\`
    - Edge labels: use verbs like \`calls\`, \`reads\`, \`writes\`, \`extends\`, \`imports\``
 }
