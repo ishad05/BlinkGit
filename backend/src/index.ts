@@ -4,6 +4,7 @@ import { serve } from '@hono/node-server'
 import { analyzeRoute } from './routes/analyze.js'
 import { getModelsRoute, postModelsRoute } from './routes/models.js'
 import { chatRoute } from './routes/chat.js'
+import { healthRoute } from './routes/health.js'
 
 const REQUIRED_ENV = ['GITHUB_TOKEN', 'GOOGLE_API_KEY', 'DATABASE_URL']
 for (const key of REQUIRED_ENV) {
@@ -23,6 +24,7 @@ app.post('/analyze', analyzeRoute)
 app.get('/models', getModelsRoute)
 app.post('/models', postModelsRoute)
 app.post('/chat', chatRoute)
+app.get('/health', healthRoute)
 
 const port = Number(process.env.PORT ?? 3000)
 
