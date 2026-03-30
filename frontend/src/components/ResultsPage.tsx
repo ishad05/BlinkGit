@@ -1,0 +1,133 @@
+import { useState } from "react";
+import { Plus } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
+import { StatusPill } from "@/components/ui/status-pill";
+import { Button } from "@/components/ui/button";
+import { ResultsSidebar, type ResultsTab } from "@/components/ResultsSidebar";
+import { OverviewPanel } from "@/components/OverviewPanel";
+import { ArchDiagram } from "@/components/ArchDiagram";
+import { SetupPanel } from "@/components/SetupPanel";
+import { IssueRanker } from "@/components/IssueRanker";
+import { ModelSwitcher } from "@/components/ModelSwitcher";
+import { ChatPanel } from "@/components/ChatPanel";
+
+// ---------------------------------------------------------------------------
+// Shared types (mirror backend schema — used by all panels)
+// ---------------------------------------------------------------------------
+
+export interface MajorModule {
+  name: string;
+  description: string;
+  type: "service" | "ui" | "api" | "config" | "database" | "middleware" | "util";
+}
+
+export interface Overview {
+  purpose: string;
+  techStack: string[];
+  keyFiles: string[];
+  highlights: string[];
+  useCases: string[];
+  coreWorkflow: string;
+  majorModules: MajorModule[];
+}
+
+export interface Setup {
+  prerequisites: string[];
+  steps: Array<{ label: string; command: string }>;
+  envVars: Array<{ key: string; description: string }>;
+  runCommand: string;
+}
+
+export interface Issue {
+  title: string;
+  url: string;
+  difficulty: "beginner" | "moderate" | "high";
+  reason: string;
+  comments?: number;
+  daysOpen?: number;
+}
+
+export interface Architecture {
+  nodes: Array<{ id: string; label: string; type: string }>;
+  edges: Array<{ from: string; to: string; label?: string }>;
+}
+
+export interface AnalysisData {
+  overview?: Overview;
+  setup?: Setup;
+  issues?: Issue[];
+  architecture?: Architecture;
+}
+
+// ---------------------------------------------------------------------------
+
+interface ResultsPageProps {
+  repo: string; // "owner/repo"
+  analysis: AnalysisData;
+  isStreaming: boolean;
+  onNewAnalysis: () => void;
+}
+
+export function ResultsPage({
+  repo,
+  analysis,
+  isStreaming,
+  onNewAnalysis,
+}: ResultsPageProps) {
+  const [activeTab, setActiveTab] = useState<ResultsTab>("overview");
+
+  return (
+    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+      {/* Top navbar */}
+      <header className="flex h-12 flex-shrink-0 items-center gap-0 border-b border-border/50 px-4">
+        <a href="/" aria-label="Home" className="mr-4">
+          <Logo size="sm" />
+        </a>
+        <span className="font-mono text-xs text-muted-foreground">/</span>
+        <span className="ml-2 font-mono text-xs text-foreground">{repo}</span>
+        <span className="ml-3">
+          <StatusPill
+            label={isStreaming ? "STREAMING" : "LIVE"}
+            variant={isStreaming ? "streaming" : "live"}
+          />
+        </span>
+
+        <div className="ml-auto flex items-center gap-2">
+          <ModelSwitcher />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onNewAnalysis}
+            className="h-7 gap-1.5 font-mono text-[11px] tracking-widest"
+          >
+            <Plus className="h-3 w-3" />
+            NEW ANALYSIS
+          </Button>
+        </div>
+      </header>
+
+      {/* Sidebar + content */}
+      <div className="flex flex-1 overflow-hidden">
+        <ResultsSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+
+        <main className="flex-1 overflow-y-auto p-6">
+          {activeTab === "overview" && (
+            <OverviewPanel overview={analysis.overview} />
+          )}
+          {activeTab === "architecture" && (
+            <ArchDiagram architecture={analysis.architecture} />
+          )}
+          {activeTab === "setup" && (
+            <SetupPanel setup={analysis.setup} />
+          )}
+          {activeTab === "issues" && (
+            <IssueRanker issues={analysis.issues} />
+          )}
+          {activeTab === "chat" && (
+            <ChatPanel repo={repo} analysis={analysis} />
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}

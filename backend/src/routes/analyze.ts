@@ -3,7 +3,6 @@ import { getCachedAnalysis, setCachedAnalysis } from '../db/cache.js'
 import { fetchRepoContext } from '../agent/github.js'
 import { getSelectedModel } from '../db/models.js'
 import { analyzeRepo } from '../agent/analyze.js'
-import type { Analysis } from '../agent/schema.js'
 
 export async function analyzeRoute(c: Context): Promise<Response> {
   // 1. Parse + validate body
@@ -50,11 +49,10 @@ export async function analyzeRoute(c: Context): Promise<Response> {
   const result = analyzeRepo(context, modelId, googleApiKey)
 
   // 7. Cache the final object in the background (don't await — let the stream flow)
-  // Wrap in Promise.resolve() because PromiseLike doesn't have .catch()
-  Promise.resolve(result.output)
-    .then((obj) => setCachedAnalysis(repoUrl, obj as Analysis))
+  result.object
+    .then((obj) => setCachedAnalysis(repoUrl, obj))
     .catch((err: unknown) => console.error('Cache write failed:', err))
 
-  // 8. Stream SSE response to client
+  // 8. Stream response to client
   return result.toTextStreamResponse()
 }

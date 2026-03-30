@@ -156,19 +156,19 @@ const model =
 ### Frontend
 ```bash
 cd frontend
-npm install
-npm run dev        # local dev server
-npm run build      # production build
-npm run preview    # preview production build
+pnpm install
+pnpm run dev        # local dev server
+pnpm run build      # production build
+pnpm run preview    # preview production build
 ```
 
 ### Backend
 ```bash
 cd backend
-npm install
-npm run dev        # tsx watch src/index.ts (local dev)
-npm run build      # tsc (compile to dist/)
-npm run start      # node dist/index.js (production)
+pnpm install
+pnpm run dev        # tsx watch src/index.ts (local dev)
+pnpm run build      # tsc (compile to dist/)
+pnpm run start      # node dist/index.js (production)
 ```
 
 ---
@@ -195,7 +195,7 @@ npm run start      # node dist/index.js (production)
 
 ## UI Skills
 
-Installed via `npx skills add ibelick/ui-skills`. Located in `frontend/.agents/skills/`.
+Located in `frontend/.agents/skills/`.
 
 | Skill | Purpose |
 |---|---|
@@ -203,3 +203,7 @@ Installed via `npx skills add ibelick/ui-skills`. Located in `frontend/.agents/s
 | `fixing-accessibility` | Accessibility fixes and best practices |
 | `fixing-metadata` | Metadata and SEO fixes |
 | `fixing-motion-performance` | Motion and animation performance fixes |
+| `frontend-integration` | **Use this before any frontend change from the backend team.** Covers design tokens, component patterns, state management, adding API calls, and adding new sidebar tabs. |
+
+> **Backend team**: always invoke `/frontend-integration` before touching any file in
+> `frontend/`. It contains all conventions you need to keep the UI consistent.
