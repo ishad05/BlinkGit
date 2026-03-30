@@ -55,9 +55,8 @@ export function HeroSection({ onSubmit, isLoading }: HeroSectionProps) {
       <div className="mb-9 flex flex-wrap items-center justify-center gap-2.5">
         <StatusPill label="AI-POWERED GITHUB INTELLIGENCE" variant="live" />
         <div className="inline-flex items-center gap-2 border border-border bg-muted/10 px-3 py-1">
-          <span className="text-sm" aria-hidden="true">🏆</span>
           <span className="font-mono text-[11px] font-medium tracking-widest text-muted-foreground">
-            FOSS HACK 2025
+            Built for FOSS HACK 2025
           </span>
         </div>
       </div>

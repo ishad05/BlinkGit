@@ -1,12 +1,13 @@
+import { ArrowUpRight } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Separator } from "@/components/ui/separator";
 import { GITHUB_URL, GITHUB_ISSUES_URL, GITHUB_RELEASES_URL, GITHUB_README_URL } from "@/lib/constants";
 
 const PROJECT_LINKS = [
-  { label: "Source Code ↗", href: GITHUB_URL, external: true },
+  { label: "Source Code", href: GITHUB_URL, external: true },
   { label: "Docs", href: GITHUB_README_URL, external: true },
   { label: "Changelog", href: GITHUB_RELEASES_URL, external: true },
-  { label: "Report an Issue ↗", href: GITHUB_ISSUES_URL, external: true },
+  { label: "Report an Issue", href: GITHUB_ISSUES_URL, external: true },
 ];
 
 const STACK_LINKS = [
@@ -34,9 +35,10 @@ function FooterLinkGroup({
           href={href}
           target={external ? "_blank" : undefined}
           rel={external ? "noopener noreferrer" : undefined}
-          className="font-mono text-xs text-muted-foreground/60 transition-colors hover:text-foreground"
+          className="inline-flex items-center gap-1.5 font-mono text-xs text-muted-foreground/60 transition-colors hover:text-foreground"
         >
           {label}
+          {external && <ArrowUpRight className="h-3 w-3" />}
         </a>
       ))}
     </div>
@@ -57,7 +59,6 @@ export function Footer() {
               ranked issues, and codebase overviews — streamed live.
             </p>
             <div className="inline-flex w-fit items-center gap-2 border border-border/50 px-3 py-1">
-              <span className="text-sm" aria-hidden="true">🏆</span>
               <span className="font-mono text-[10px] tracking-[0.08em] text-muted-foreground/40">
                 FOSS HACK 2025
               </span>
