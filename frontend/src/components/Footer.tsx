@@ -60,7 +60,7 @@ export function Footer() {
             </p>
             <div className="inline-flex w-fit items-center gap-2 border border-border/50 px-3 py-1">
               <span className="font-mono text-[10px] tracking-[0.08em] text-muted-foreground/40">
-                FOSS HACK 2025
+                FOSS HACK 2026
               </span>
             </div>
           </div>
