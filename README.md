@@ -4,6 +4,8 @@
 ![Railway](https://img.shields.io/badge/Backend-Railway%20%2B%20Node.js-0B0D0E?logo=railway&logoColor=white)
 ![AI SDK](https://img.shields.io/badge/Powered%20by-Vercel%20AI%20SDK-000000?logo=vercel&logoColor=white)
 
+**Live demo: [https://blinkgit.pages.dev/](https://blinkgit.pages.dev/)**
+
 BlinkGit is a GitHub repository intelligence tool. Paste any public GitHub repo URL and get an instant, AI-powered analysis — including an interactive architecture diagram, a ranked list of open issues by difficulty, and a high-level overview of the project.
 
 ---
